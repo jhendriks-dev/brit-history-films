@@ -323,7 +323,7 @@
             <i class="fa-solid fa-film"></i> The Movie Database (TMDB) API Key (Optional)
           </h4>
           <p class="text-xs text-slate-400">
-            By default, movies are matched using TMDB public data and fallbacks. To connect your custom TMDB v3 API Key for unlimited direct requests:
+            By default, movies are matched using TMDB public data and fallbacks. To connect your custom TMDB v3 API Key:
           </p>
           <input type="text" id="customTmdbApiKey" placeholder="e.g. 1a2b3c4d5e..." 
             class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500">
@@ -335,16 +335,9 @@
             <i class="fa-solid fa-database"></i> Firebase Realtime Sync JSON (Optional)
           </h4>
           <p class="text-xs text-slate-400">
-            Paste your Firebase web app config to synchronize votes in real-time across all student devices:
+            Paste your Firebase web app config object below to synchronize votes in real-time across all student devices:
           </p>
-          <textarea id="customFirebaseConfig" rows="3" const firebaseConfig = {
-  apiKey: "AIzaSyD9ayWq75H7nEOZminM75V98bl8HLQfqmo",
-  authDomain: "american-film-watchlist.firebaseapp.com",
-  projectId: "american-film-watchlist",
-  storageBucket: "american-film-watchlist.firebasestorage.app",
-  messagingSenderId: "513388477247",
-  appId: "1:513388477247:web:6fdf58c9918d9aa9cc718a"
-};
+          <textarea id="customFirebaseConfig" rows="5" placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "..."}' 
             class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"></textarea>
         </div>
 
@@ -362,31 +355,10 @@
   <!-- Application Logic JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Application ID
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'brit-history-films-1920-1973';
-
-    const ALL_TOPICS = [
-      "The Roaring Twenties",
-      "Flapper Culture",
-      "The Harlem Renaissance",
-      "Prohibition",
-      "Gangsters, Al Capone, the Mafia",
-      "Immigration",
-      "Strikes, Unions & Red Scare",
-      "The Crash, Great Depression & New Deal",
-      "WWII",
-      "1950s Boom: Suburbia, Teens & Rock n Roll",
-      "Civil Rights & Black Power",
-      "Women's Rights & Second Wave Feminism",
-      "Hippie Counter-Culture & Woodstock",
-      "The Vietnam War"
-    ];
-
-    // Holding films removed - list starts empty until students & staff vote
-    const initialSeedFilms = [];
+    const appId = 'brit-history-films-1920-1973';
 
     let films = [];
     let userVotedSet = new Set(JSON.parse(localStorage.getItem('user_voted_film_ids') || '[]'));
@@ -396,14 +368,17 @@
     let debounceTimer = null;
     let currentTmdbMatch = null;
 
-    // Safely retrieve Firebase configuration
+    // Default hardcoded Firebase config fallback
+    const defaultFirebaseConfig = {
+      apiKey: "AIzaSyD9ayWq75H7nEOZminM75V98bl8HLQfqmo",
+      authDomain: "american-film-watchlist.firebaseapp.com",
+      projectId: "american-film-watchlist",
+      storageBucket: "american-film-watchlist.firebasestorage.app",
+      messagingSenderId: "513388477247",
+      appId: "1:513388477247:web:6fdf58c9918d9aa9cc718a"
+    };
+
     function getFirebaseConfig() {
-      if (typeof firebaseConfig !== 'undefined' && firebaseConfig && firebaseConfig.apiKey) {
-        return firebaseConfig;
-      }
-      if (typeof window !== 'undefined' && window.firebaseConfig && window.firebaseConfig.apiKey) {
-        return window.firebaseConfig;
-      }
       const storedConfig = localStorage.getItem('custom_firebase_config');
       if (storedConfig) {
         try {
@@ -413,11 +388,11 @@
           console.warn("Invalid custom Firebase config in localStorage:", e);
         }
       }
-      return null;
+      return defaultFirebaseConfig;
     }
 
     function getTmdbApiKey() {
-      return localStorage.getItem('custom_tmdb_api_key') || '15d2ea6d0dc1d476efbca3eba2192313'; // Standard public lookup key fallback
+      return localStorage.getItem('custom_tmdb_api_key') || '15d2ea6d0dc1d476efbca3eba2192313';
     }
 
     function autoGenerateTags(tmdbMovie) {
@@ -427,7 +402,6 @@
       const year = parseInt(tmdbMovie.year || '0', 10);
       const tags = new Set();
 
-      // Topic Keyword Mappings
       if (text.includes('gatsby') || text.includes('roaring twenties') || text.includes('jazz age') || (year >= 1920 && year <= 1929)) {
         tags.add("The Roaring Twenties");
       }
@@ -471,7 +445,6 @@
         tags.add("The Vietnam War");
       }
 
-      // Default decade-based fallback if no specific keywords matched
       if (tags.size === 0) {
         if (year >= 1920 && year < 1930) tags.add("The Roaring Twenties");
         else if (year >= 1930 && year < 1940) tags.add("The Crash, Great Depression & New Deal");
@@ -484,14 +457,13 @@
       return Array.from(tags);
     }
 
-    // Search TMDB for closest matching movie
     async function searchTmdbMovie(query) {
       if (!query || query.trim().length < 2) return null;
       const apiKey = getTmdbApiKey();
       
       try {
         const response = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false`);
-        if (!response.ok) throw new Error("TMDB network response failed");
+        if (!response.ok) throw new Error("TMDB response failed");
         
         const data = await response.json();
         if (data.results && data.results.length > 0) {
@@ -543,7 +515,6 @@
           currentTmdbMatch = match;
           warningBox.classList.add('hidden');
           
-          // Check if already in our database list
           const existing = films.find(f => f.tmdbId === match.tmdbId || f.title.toLowerCase() === match.title.toLowerCase());
           document.getElementById('tmdbMatchStatus').innerText = existing ? `(Already Nominated - Will +1 Vote)` : `(New Nomination)`;
 
@@ -554,9 +525,8 @@
           const posterImg = document.getElementById('tmdbPreviewPoster');
           if (match.posterUrl) {
             posterImg.src = match.posterUrl;
-            posterImg.classList.remove('hidden');
           } else {
-            posterImg.src = `https://placehold.co/100x150/1e293b/amber?text=${encodeURIComponent(match.rawTitle.substring(0, 6))}`;
+            posterImg.src = window.generateFallbackPosterSvg(match.rawTitle);
           }
 
           const autoTagsContainer = document.getElementById('autoTagsPreview');
@@ -584,7 +554,6 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Matching TMDB...</span>`;
 
-      // Get TMDB match or lookup on the fly
       let matchedData = currentTmdbMatch;
       if (!matchedData) {
         matchedData = await searchTmdbMovie(rawEnteredTitle);
@@ -598,18 +567,15 @@
         return;
       }
 
-      // Check if this TMDB film already exists in our database list
       const existingFilm = films.find(f => (matchedData.tmdbId && f.tmdbId === matchedData.tmdbId) || f.title.toLowerCase() === matchedData.title.toLowerCase());
 
       if (existingFilm) {
-        // Increment vote for existing film
-        await handleVote(existingFilm.id);
+        await window.handleVote(existingFilm.id);
         resetForm();
         showToast(`Added a vote for "${existingFilm.title}"!`);
         return;
       }
 
-      // Add as new film nomination
       const newFilm = {
         title: matchedData.title,
         tmdbId: matchedData.tmdbId,
@@ -640,7 +606,7 @@
       localStorage.setItem('user_voted_film_ids', JSON.stringify(Array.from(userVotedSet)));
       films.push(localObj);
       saveLocalStorage();
-      renderFilms();
+      window.renderFilms();
 
       resetForm();
       showToast(`Nominated: ${matchedData.title}`);
@@ -653,227 +619,112 @@
       currentTmdbMatch = null;
     }
 
-    async function initDatabase() {
-      // Pre-fill setup modal inputs
-      const customTmdbKey = localStorage.getItem('custom_tmdb_api_key');
-      if (customTmdbKey) document.getElementById('customTmdbApiKey').value = customTmdbKey;
-      const customFb = localStorage.getItem('custom_firebase_config');
-      if (customFb) document.getElementById('customFirebaseConfig').value = customFb;
-
-      const activeConfig = getFirebaseConfig();
-
-      if (activeConfig && activeConfig.apiKey) {
-        try {
-          const app = initializeApp(activeConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-
-          if (typeof __initial_auth_token !== 'undefined') {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-
-          const filmsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'films');
-          
-          onSnapshot(filmsCollection, (snapshot) => {
-            films = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderFilms();
-          }, (err) => {
-            console.warn("Firebase realtime fallback to local memory:", err);
-            loadLocalStorageFallback();
-          });
-
-          isFirebaseReady = true;
-          document.getElementById('syncBadge').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Sync Active`;
-          return;
-        } catch (e) {
-          console.warn("Firebase initialization failed, using local storage:", e);
-        }
-      }
-      loadLocalStorageFallback();
-    }
-
-    function loadLocalStorageFallback() {
-      const stored = localStorage.getItem('local_history_films');
-      if (stored) {
-        films = JSON.parse(stored);
-      } else {
-        films = [];
-        saveLocalStorage();
-      }
-      document.getElementById('syncBadge').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Local Storage Mode`;
-      renderFilms();
-    }
-
-    function saveLocalStorage() {
-      localStorage.setItem('local_history_films', JSON.stringify(films));
-    }
-
     window.handleVote = async (filmId) => {
+      const film = films.find(f => f.id === filmId);
+      if (!film) return;
+
       const hasVoted = userVotedSet.has(filmId);
-      
+
       if (hasVoted) {
+        film.votes = Math.max(1, film.votes - 1);
         userVotedSet.delete(filmId);
       } else {
+        film.votes += 1;
         userVotedSet.add(filmId);
       }
-      
+
       localStorage.setItem('user_voted_film_ids', JSON.stringify(Array.from(userVotedSet)));
 
-      if (isFirebaseReady && db) {
+      if (isFirebaseReady && db && !String(filmId).startsWith('local_')) {
         try {
           const filmRef = doc(db, 'artifacts', appId, 'public', 'data', 'films', filmId);
-          await updateDoc(filmRef, {
-            votes: increment(hasVoted ? -1 : 1)
-          });
-          return;
+          await updateDoc(filmRef, { votes: increment(hasVoted ? -1 : 1) });
         } catch (err) {
           console.warn("Firebase vote update error:", err);
         }
-      }
-
-      const film = films.find(f => f.id === filmId);
-      if (film) {
-        film.votes += hasVoted ? -1 : 1;
+      } else {
         saveLocalStorage();
-        renderFilms();
+        window.renderFilms();
       }
     };
 
-    function showToast(msg) {
-      const totalCount = films.length;
-      const progressElem = document.getElementById('progressText');
-      if (progressElem) {
-        progressElem.innerText = `${totalCount} Film${totalCount === 1 ? '' : 's'} Nominated`;
-      }
-
-      const toast = document.getElementById('toastMessage');
-      const toastText = document.getElementById('toastText');
-      if (toast && toastText) {
-        toastText.innerText = msg;
-        toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 3500);
-      }
-    }
-
     window.renderFilms = () => {
-      const search = document.getElementById('searchInput').value.toLowerCase().trim();
-      const topicFilter = document.getElementById('filterTopic').value;
+      const container = document.getElementById('filmListContainer');
+      const searchVal = (document.getElementById('searchInput').value || '').toLowerCase();
+      const topicVal = document.getElementById('filterTopic').value;
       const sortBy = document.getElementById('sortBy').value;
 
       let filtered = films.filter(f => {
-        const filmTopics = Array.isArray(f.topics) ? f.topics : (f.topic ? [f.topic] : []);
-        const topicsStr = filmTopics.join(' ').toLowerCase();
-
-        const matchesSearch = f.title.toLowerCase().includes(search) || topicsStr.includes(search);
-        const matchesTopic = topicFilter === 'ALL' || filmTopics.includes(topicFilter);
+        const matchesSearch = f.title.toLowerCase().includes(searchVal) || 
+                              (f.topics && f.topics.some(t => t.toLowerCase().includes(searchVal)));
+        const matchesTopic = topicVal === 'ALL' || (f.topics && f.topics.includes(topicVal));
         return matchesSearch && matchesTopic;
       });
 
       filtered.sort((a, b) => {
         if (sortBy === 'votes') return b.votes - a.votes;
         if (sortBy === 'newest') return (b.timestamp || 0) - (a.timestamp || 0);
-        if (sortBy === 'title') return a.title.localeCompare(b.title);
-        return 0;
+        return a.title.localeCompare(b.title);
       });
 
-      const totalCount = films.length;
-      const progressElem = document.getElementById('progressText');
-      if (progressElem) {
-        progressElem.innerText = `${totalCount} Film${totalCount === 1 ? '' : 's'} Nominated`;
-      }
+      document.getElementById('progressText').innerText = `${films.length} ${films.length === 1 ? 'Film' : 'Films'} Nominated`;
 
-      const container = document.getElementById('filmListContainer');
-      
       if (filtered.length === 0) {
         container.innerHTML = `
-          <div class="p-8 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
-            <i class="fa-solid fa-film text-3xl text-slate-600"></i>
-            <p class="text-sm font-semibold text-slate-400">No films in the list yet.</p>
-            <p class="text-xs text-slate-500">Be the first to nominate a film by typing its title above!</p>
-          </div>
-        `;
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-3">
+            <i class="fa-solid fa-film text-4xl text-slate-600"></i>
+            <p class="font-medium">No films found.</p>
+            <p class="text-xs text-slate-500">Nominate the first film using the form on the left!</p>
+          </div>`;
         return;
       }
 
-      container.innerHTML = filtered.map((film) => {
+      container.innerHTML = filtered.map(film => {
         const hasVoted = userVotedSet.has(film.id);
-        const filmTopics = Array.isArray(film.topics) ? film.topics : (film.topic ? [film.topic] : []);
-        
-        const cleanTitle = film.title.replace(/\s*\(\d{4}\)/, '').trim();
-        const googleStreamingUrl = `https://www.google.com/search?q=${encodeURIComponent('where to stream ' + film.title)}`;
-        const imdbSearchUrl = `https://www.imdb.com/find?q=${encodeURIComponent(film.title)}`;
-        const letterboxdSearchUrl = `https://letterboxd.com/search/${encodeURIComponent(cleanTitle)}/`;
-
-        // Poster image fallback
-        const posterSrc = film.posterUrl ? film.posterUrl : window.generateFallbackPosterSvg(cleanTitle);
+        const poster = film.posterUrl || window.generateFallbackPosterSvg(film.title);
+        const searchTitle = encodeURIComponent(film.title.replace(/\s*\(\d{4}\)/, ''));
 
         return `
-          <div class="bg-slate-900 border border-slate-800 hover:border-slate-700 transition rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group shadow-md">
-            
-            <div class="flex items-start gap-4 flex-1 min-w-0">
-              <!-- TMDB Film Poster -->
-              <img src="${posterSrc}" alt="${escapeHtml(film.title)} Poster" 
-                onerror="this.onerror=null; this.src=window.generateFallbackPosterSvg('${escapeHtml(cleanTitle)}');"
-                class="w-16 h-24 sm:w-20 sm:h-28 object-cover rounded-xl bg-slate-950 border border-slate-800 shrink-0 shadow">
+          <div class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start transition shadow-lg">
+            <img src="${poster}" onerror="this.onerror=null; this.src=window.generateFallbackPosterSvg('${film.title.replace(/'/g, "\\'")}');" 
+              class="w-20 h-28 object-cover rounded-xl bg-slate-950 shrink-0 shadow-md" alt="${film.title}">
 
-              <div class="space-y-2 flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <h4 class="font-bold text-slate-100 text-base sm:text-lg font-serif tracking-tight leading-snug">${escapeHtml(film.title)}</h4>
-                  
-                  ${film.tmdbRating ? `
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold" title="TMDB User Score">
-                      <i class="fa-solid fa-star text-[10px] text-amber-400"></i>
-                      <span>${escapeHtml(film.tmdbRating)}</span>
-                    </span>
-                  ` : ''}
+            <div class="flex-1 min-w-0 space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h4 class="font-bold text-slate-100 font-serif text-base sm:text-lg flex items-center gap-2">
+                    ${film.title}
+                    ${film.tmdbRating ? `<span class="text-xs font-sans text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20"><i class="fa-solid fa-star text-[10px]"></i> ${film.tmdbRating}</span>` : ''}
+                  </h4>
                 </div>
 
-                ${film.overview ? `
-                  <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${escapeHtml(film.overview)}</p>
-                ` : ''}
+                <button onclick="handleVote('${film.id}')" 
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${hasVoted ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30'}">
+                  <i class="fa-solid fa-thumbs-up"></i>
+                  <span>${film.votes}</span>
+                </button>
+              </div>
 
-                <!-- TAGS -->
-                <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  ${filmTopics.map(t => `
-                    <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-950 text-amber-400/90 border border-slate-800 flex items-center gap-1">
-                      <i class="fa-solid fa-tag text-[9px]"></i> ${escapeHtml(t)}
-                    </span>
-                  `).join('')}
-                </div>
+              ${film.overview ? `<p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${film.overview}</p>` : ''}
 
-                <!-- External Search & Streaming Links -->
-                <div class="flex items-center gap-2 pt-1 flex-wrap text-xs">
-                  <!-- Google Streaming Search Link -->
-                  <a href="${googleStreamingUrl}" target="_blank" rel="noopener noreferrer" 
-                    title="Search Google to find where to stream this film"
-                    class="px-2.5 py-1 rounded-lg bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-700/60 font-semibold text-[11px] transition inline-flex items-center gap-1.5 shadow-sm">
-                    <i class="fa-brands fa-google text-xs text-sky-400"></i> Where to Stream
-                  </a>
+              <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                ${(film.topics || []).map(t => `<span class="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">${t}</span>`).join('')}
+              </div>
 
-                  <a href="${imdbSearchUrl}" target="_blank" rel="noopener noreferrer" title="View on IMDb"
-                    class="px-2 py-1 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold text-[10px] tracking-wider uppercase transition inline-flex items-center gap-1">
-                    <i class="fa-brands fa-imdb text-xs"></i> IMDb
-                  </a>
-                  <a href="${letterboxdSearchUrl}" target="_blank" rel="noopener noreferrer" title="View on Letterboxd"
-                    class="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-[10px] tracking-wider uppercase transition inline-flex items-center gap-1">
-                    <i class="fa-solid fa-film text-[10px]"></i> Letterboxd
-                  </a>
-                </div>
+              <div class="flex items-center gap-3 pt-2 text-[11px] text-slate-400 border-t border-slate-800/60">
+                <a href="https://www.google.com/search?q=where+to+stream+${searchTitle}" target="_blank" class="hover:text-amber-400 transition flex items-center gap-1">
+                  <i class="fa-solid fa-play text-amber-400"></i> Where to Stream
+                </a>
+                <span>•</span>
+                <a href="https://www.imdb.com/find?q=${searchTitle}" target="_blank" class="hover:text-amber-400 transition flex items-center gap-1">
+                  <i class="fa-brands fa-imdb text-amber-400"></i> IMDb
+                </a>
+                <span>•</span>
+                <a href="https://letterboxd.com/search/${searchTitle}" target="_blank" class="hover:text-amber-400 transition flex items-center gap-1">
+                  <i class="fa-solid fa-film text-amber-400"></i> Letterboxd
+                </a>
               </div>
             </div>
-
-            <!-- Vote Button -->
-            <button onclick="handleVote('${film.id}')" 
-              class="w-full sm:w-auto flex sm:flex-col items-center justify-center gap-2 sm:gap-1 min-w-[4rem] h-11 sm:h-20 px-4 rounded-xl font-bold transition transform active:scale-95 ${
-                hasVoted 
-                  ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20' 
-                  : 'bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-slate-300 hover:text-amber-400'
-              }">
-              <i class="fa-solid fa-thumbs-up text-sm"></i>
-              <span class="text-xs sm:text-sm">${film.votes} Vote${film.votes === 1 ? '' : 's'}</span>
-            </button>
           </div>
         `;
       }).join('');
@@ -882,52 +733,33 @@
     window.togglePosterMode = () => {
       const modal = document.getElementById('posterModal');
       const isHidden = modal.classList.contains('hidden');
-
       if (isHidden) {
-        modal.classList.remove('hidden');
         renderPoster();
+        modal.classList.remove('hidden');
       } else {
         modal.classList.add('hidden');
       }
     };
 
     function renderPoster() {
-      const posterContent = document.getElementById('posterContent');
-      
-      const topMovies = [...films].sort((a, b) => b.votes - a.votes);
-      const grouped = {};
+      const container = document.getElementById('posterContent');
+      const sorted = [...films].sort((a, b) => b.votes - a.votes);
 
-      topMovies.forEach(m => {
-        const mTopics = Array.isArray(m.topics) ? m.topics : (m.topic ? [m.topic] : ["General 1920-1973"]);
-        if (mTopics.length === 0) {
-          if (!grouped["General 1920-1973"]) grouped["General 1920-1973"] = [];
-          grouped["General 1920-1973"].push(m);
-        } else {
-          mTopics.forEach(top => {
-            if (!grouped[top]) grouped[top] = [];
-            grouped[top].push(m);
-          });
-        }
-      });
-
-      if (Object.keys(grouped).length === 0) {
-        posterContent.innerHTML = `<p class="text-slate-500 text-center col-span-full">No votes yet! Submit some nominations first.</p>`;
+      if (sorted.length === 0) {
+        container.innerHTML = `<p class="col-span-full text-center text-slate-500 italic">No films nominated yet.</p>`;
         return;
       }
 
-      posterContent.innerHTML = Object.entries(grouped).map(([topic, list]) => `
-        <div class="border-2 border-red-900/30 p-4 rounded-xl bg-amber-50/50">
-          <h4 class="font-bold text-red-900 font-serif text-sm border-b border-red-900/20 pb-1 mb-2 uppercase tracking-wide">
-            ${escapeHtml(topic)}
-          </h4>
-          <ul class="space-y-2">
-            ${list.map(f => `
-              <li class="text-xs font-semibold text-slate-800 flex justify-between items-center gap-2">
-                <span class="truncate">&bull; ${escapeHtml(f.title)}</span>
-                <span class="text-[10px] text-red-800 bg-red-100 px-1.5 py-0.5 rounded font-mono shrink-0">${f.votes} votes</span>
-              </li>
-            `).join('')}
-          </ul>
+      container.innerHTML = sorted.map((film, index) => `
+        <div class="border-2 border-slate-300 p-4 rounded-xl bg-white shadow-sm flex gap-3">
+          <div class="font-black text-2xl text-red-900 w-6 shrink-0">#${index + 1}</div>
+          <div>
+            <h5 class="font-bold font-serif text-slate-900 text-sm leading-snug">${film.title}</h5>
+            <p class="text-xs text-red-800 font-semibold mt-1"><i class="fa-solid fa-thumbs-up"></i> ${film.votes} Votes</p>
+            <div class="flex flex-wrap gap-1 mt-2">
+              ${(film.topics || []).map(t => `<span class="text-[9px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-sans font-medium">${t}</span>`).join('')}
+            </div>
+          </div>
         </div>
       `).join('');
     }
@@ -940,26 +772,63 @@
       const fbConfig = document.getElementById('customFirebaseConfig').value.trim();
 
       if (tmdbKey) localStorage.setItem('custom_tmdb_api_key', tmdbKey);
-      if (fbConfig) {
-        try {
-          JSON.parse(fbConfig);
-          localStorage.setItem('custom_firebase_config', fbConfig);
-        } catch (e) {
-          alert("Invalid Firebase JSON format!");
-          return;
-        }
-      }
+      if (fbConfig) localStorage.setItem('custom_firebase_config', fbConfig);
+
+      alert("Settings saved! Reloading application...");
       location.reload();
     };
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-      })[m]);
+    function saveLocalStorage() {
+      localStorage.setItem('local_films_list', JSON.stringify(films));
     }
 
-    initDatabase();
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      document.getElementById('toastText').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Initialize Database Connection
+    async function initFirebase() {
+      const config = getFirebaseConfig();
+      if (!config) {
+        loadLocalStorage();
+        return;
+      }
+
+      try {
+        const app = initializeApp(config);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        await signInAnonymously(auth);
+        isFirebaseReady = true;
+
+        const filmsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'films');
+        onSnapshot(filmsCollection, (snapshot) => {
+          films = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+          }));
+          window.renderFilms();
+        }, (err) => {
+          console.warn("Firestore snapshot error, falling back to local:", err);
+          loadLocalStorage();
+        });
+      } catch (err) {
+        console.warn("Firebase initialization failed, falling back to local storage:", err);
+        loadLocalStorage();
+      }
+    }
+
+    function loadLocalStorage() {
+      films = JSON.parse(localStorage.getItem('local_films_list') || '[]');
+      window.renderFilms();
+    }
+
+    // Startup
+    initFirebase();
   </script>
 </body>
 </html>
