@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>America 1920–1973: Great Film List Voting</title>
+  <style>
+    :root {
+      --bg-color: #f4f1ea;
+      --card-bg: #ffffff;
+      --primary: #8b0000;
+      --primary-hover: #a11111;
+      --text: #2b2b2b;
+      --accent: #d97706;
+      --border: #e5e7eb;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      color: var(--primary);
+      margin-bottom: 5px;
+      font-size: 2.2rem;
+    }
+
+    p.subtitle {
+      color: #555;
+      font-size: 1.05rem;
+      margin-top: 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+
+    button.btn-submit {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      transition: background-color 0.2s;
+    }
+
+    button.btn-submit:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .movie-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .movie-item:last-child {
+      border-bottom: none;
+    }
+
+    .movie-info {
+      flex-grow: 1;
+      padding-right: 15px;
+    }
+
+    .movie-title {
+      font-weight: bold;
+      font-size: 1.15rem;
+      margin-bottom: 4px;
+    }
+
+    .movie-meta {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #e2e8f0;
+      color: #334155;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .vote-btn {
+      background: white;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .vote-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .vote-btn.voted {
+      background: var(--primary);
+      color: white;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .sort-select {
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>America 1920–1973 Film Vote</h1>
+    <p class="subtitle">Help us curate the top 25–50 movies for our classroom posters & resource packs!</p>
+  </header>
+
+  <!-- Submission Form -->
+  <div class="card">
+    <h2 style="margin-top: 0;">Suggest a Film</h2>
+    <form id="filmForm">
+      <div class="form-group">
+        <label for="title">Movie Title & Year</label>
+        <input type="text" id="title" placeholder="e.g. The Godfather (1972) or Malcolm X (1992)" required>
+      </div>
+
+      <div class="form-group">
+        <label for="topic">Historical Topic / Era Covered</label>
+        <select id="topic" required>
+          <option value="">Select a topic...</option>
+          <option value="The Roaring Twenties">The Roaring Twenties</option>
+          <option value="Flapper Culture">Flapper culture</option>
+          <option value="The Harlem Renaissance">The Harlem Renaissance</option>
+          <option value="Prohibition">Prohibition</option>
+          <option value="Gangsters, Al Capone, Mafia">Gangsters, Al Capone, the Mafia</option>
+          <option value="Immigration">Immigration</option>
+          <option value="Strikes, Unions & Red Scare">Strikes, unions and the Red Scare</option>
+          <option value="The Great Depression & New Deal">The Crash, Great Depression & New Deal</option>
+          <option value="WWII">WWII</option>
+          <option value="1950s Boom & Teenagers">1950s boom - suburbia, teenagers, rock n' roll</option>
+          <option value="Civil Rights & Black Power">Civil Rights and the Black Power movement</option>
+          <option value="Second Wave Feminism">Women's rights and Second Wave Feminism</option>
+          <option value="Counter Culture & Woodstock">The Hippie movement, counter culture, Woodstock</option>
+          <option value="The Vietnam War">The Vietnam War</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="reason">Why should this movie be included? (Optional)</label>
+        <textarea id="reason" rows="2" placeholder="Brief explanation of how it links to our syllabus..."></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit">Submit Film Suggestion</button>
+    </form>
+  </div>
+
+  <!-- Voting List -->
+  <div class="card">
+    <div class="controls">
+      <h2 style="margin: 0;">Submitted Films</h2>
+      <select id="sortSelect" class="sort-select">
+        <option value="votes">Sort by Most Votes</option>
+        <option value="newest">Sort by Newest</option>
+      </select>
+    </div>
+    
+    <div id="movieList">
+      <!-- Items dynamically populated here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initial seed movies
+  const initialData = [
+    { id: 1, title: "The Great Gatsby (2013)", topic: "The Roaring Twenties", reason: "Explores wealth, class, and 1920s boom culture.", votes: 12 },
+    { id: 2, title: "Selma (2014)", topic: "Civil Rights & Black Power", reason: "Covers the 1965 voting rights marches.", votes: 18 },
+    { id: 3, title: "The Untouchables (1987)", topic: "Prohibition", reason: "Classic depiction of Prohibition-era gangster enforcement.", votes: 9 }
+  ];
+
+  // Load from LocalStorage or use initial data
+  let movies = JSON.parse(localStorage.getItem('history_films')) || initialData;
+  let userVotes = JSON.parse(localStorage.getItem('user_voted_ids')) || [];
+
+  function saveData() {
+    localStorage.setItem('history_films', JSON.stringify(movies));
+    localStorage.setItem('user_voted_ids', JSON.stringify(userVotes));
+  }
+
+  function renderList() {
+    const listElement = document.getElementById('movieList');
+    const sortBy = document.getElementById('sortSelect').value;
+
+    const sorted = [...movies].sort((a, b) => {
+      if (sortBy === 'votes') return b.votes - a.votes;
+      return b.id - a.id;
+    });
+
+    if (sorted.length === 0) {
+      listElement.innerHTML = `<p style="text-align: center; color: #777;">No movies submitted yet. Be the first!</p>`;
+      return;
+    }
+
+    listElement.innerHTML = sorted.map(movie => {
+      const hasVoted = userVotes.includes(movie.id);
+      return `
+        <div class="movie-item">
+          <div class="movie-info">
+            <div class="movie-title">${escapeHtml(movie.title)}</div>
+            ${movie.reason ? `<div class="movie-meta">"${escapeHtml(movie.reason)}"</div>` : ''}
+            <span class="badge">${escapeHtml(movie.topic)}</span>
+          </div>
+          <button class="vote-btn ${hasVoted ? 'voted' : ''}" onclick="toggleVote(${movie.id})">
+            +1 <span>(${movie.votes})</span>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleVote(id) {
+    const movie = movies.find(m => m.id === id);
+    const voteIndex = userVotes.indexOf(id);
+
+    if (voteIndex === -1) {
+      movie.votes += 1;
+      userVotes.push(id);
+    } else {
+      movie.votes -= 1;
+      userVotes.splice(voteIndex, 1);
+    }
+
+    saveData();
+    renderList();
+  }
+
+  document.getElementById('filmForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('title').value.trim();
+    const topic = document.getElementById('topic').value;
+    const reason = document.getElementById('reason').value.trim();
+
+    if (!title || !topic) return;
+
+    const newMovie = {
+      id: Date.now(),
+      title: title,
+      topic: topic,
+      reason: reason,
+      votes: 1
+    };
+
+    movies.push(newMovie);
+    userVotes.push(newMovie.id);
+    saveData();
+    renderList();
+
+    document.getElementById('filmForm').reset();
+  });
+
+  document.getElementById('sortSelect').addEventListener('change', renderList);
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[m]);
+  }
+
+  // Initial render
+  renderList();
+</script>
+
+</body>
+</html>
