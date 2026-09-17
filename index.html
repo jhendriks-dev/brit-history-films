@@ -139,8 +139,8 @@
         <h2 class="text-2xl sm:text-4xl font-black font-serif text-slate-100 tracking-tight leading-tight">
           Help Us Curate the <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-red-400">Ultimate Film List</span> for America 1920–1973
         </h2>
-        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
-          Type a film name to instantly match it with The Movie Database (TMDB). Vote for existing nominations or suggest classic & contemporary films covering US history between 1920 and 1973.
+        <p class="text-slate-300 text-sm font-medium leading-relaxed">
+          Simply type your film and hit enter below
         </p>
 
         <!-- Dynamic Counter -->
@@ -162,8 +162,8 @@
             <i class="fa-solid fa-plus-circle text-lg"></i>
           </div>
           <div>
-            <h3 class="font-bold text-slate-100 font-serif">Nominate a Film</h3>
-            <p class="text-xs text-slate-400">Enter title to match with TMDB movie database</p>
+            <h3 class="font-bold text-slate-100 font-serif">Nominate or Vote for a Film</h3>
+            <p class="text-xs text-slate-400">Search TMDB to add a new movie or vote for an existing one</p>
           </div>
         </div>
 
@@ -171,7 +171,7 @@
           <div>
             <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Film Title *</label>
             <div class="relative">
-              <input type="text" id="movieTitle" required placeholder="e.g. Modern Times, The Great Gatsby, Selma..." 
+              <input type="text" id="movieTitle" required placeholder="e.g. Modern Times, Selma, The Godfather..." 
                 oninput="debouncedTmdbPreview()"
                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-slate-500 transition">
               <div id="tmdbLoadingSpinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-amber-400">
@@ -180,34 +180,42 @@
             </div>
           </div>
 
-          <!-- TMDB Live Match Preview Box -->
-          <div id="tmdbPreviewCard" class="hidden bg-slate-950 border border-amber-500/30 rounded-xl p-3 flex gap-3 items-center">
-            <img id="tmdbPreviewPoster" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>" 
-              onerror="if (window.generateFallbackPosterSvg) { this.onerror=null; this.src=window.generateFallbackPosterSvg('Movie'); }"
-              class="w-12 h-16 object-cover rounded bg-slate-900 shrink-0" alt="Poster preview">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5">
-                <span class="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase">TMDB Match</span>
-                <span id="tmdbPreviewRating" class="text-xs text-amber-300 font-semibold"></span>
+          <!-- TMDB Live Match & "Did You Mean?" Box -->
+          <div id="tmdbPreviewCard" class="hidden bg-slate-950 border border-amber-500/40 rounded-xl p-3 space-y-2">
+            <div class="text-[10px] uppercase font-bold text-amber-400 flex items-center justify-between">
+              <span><i class="fa-solid fa-magnifying-glass text-amber-400 mr-1"></i> TMDB Match Found</span>
+              <span id="tmdbMatchStatus" class="text-slate-400"></span>
+            </div>
+
+            <div class="flex gap-3 items-center">
+              <img id="tmdbPreviewPoster" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>" 
+                onerror="if (window.generateFallbackPosterSvg) { this.onerror=null; this.src=window.generateFallbackPosterSvg('Movie'); }"
+                class="w-12 h-16 object-cover rounded bg-slate-900 shrink-0" alt="Poster preview">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span id="tmdbPreviewRating" class="text-xs text-amber-300 font-semibold"></span>
+                </div>
+                <h5 id="tmdbPreviewTitle" class="text-xs font-bold text-slate-100 truncate mt-0.5"></h5>
+                <p id="tmdbPreviewYear" class="text-[11px] text-slate-400 line-clamp-2"></p>
               </div>
-              <h5 id="tmdbPreviewTitle" class="text-xs font-bold text-slate-100 truncate mt-0.5"></h5>
-              <p id="tmdbPreviewYear" class="text-[11px] text-slate-400"></p>
+            </div>
+
+            <div id="autoTagsPreview" class="flex flex-wrap gap-1 pt-1 border-t border-slate-800 text-[10px]">
+              <!-- Auto generated tags preview injected here -->
             </div>
           </div>
 
-          <div>
-            <div class="flex justify-between items-center mb-1.5">
-              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">TAGS</label>
-              <span class="text-[10px] text-amber-400/90 italic">Select any that apply</span>
-            </div>
-            <div id="tagSelectorContainer" class="max-h-48 overflow-y-auto p-2 bg-slate-950 border border-slate-800 rounded-xl space-y-1 text-xs">
-              <!-- Checkboxes injected by JS -->
+          <div id="tmdbNotFoundWarning" class="hidden p-3 bg-red-950/60 border border-red-800 text-red-200 text-xs rounded-xl flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-red-400 text-base shrink-0"></i>
+            <div>
+              <p class="font-bold">No exact match on TMDB</p>
+              <p class="text-[11px] text-red-300">Please check your spelling. Only verified TMDB movies can be nominated.</p>
             </div>
           </div>
 
           <button type="submit" id="submitBtn" class="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-red-900/30 transition transform active:scale-95 flex items-center justify-center gap-2">
             <i class="fa-solid fa-film"></i>
-            <span>Match & Nominate Film</span>
+            <span>Submit Film or Add Vote</span>
           </button>
         </form>
 
@@ -370,35 +378,8 @@
       "The Vietnam War"
     ];
 
-    const initialSeedFilms = [
-      { 
-        title: "The Great Gatsby (1974)", 
-        topics: ["The Roaring Twenties", "Flapper Culture"], 
-        overview: "Jay Gatsby, a mysterious millionaire, hosts lavish parties in 1920s Long Island as he pines for his former love, Daisy Buchanan.",
-        tmdbRating: "6.4", 
-        posterUrl: "https://image.tmdb.org/t/p/w500/AmliI5X6d5I1V6UvAnqB17lT1fT.jpg",
-        votes: 12, 
-        timestamp: Date.now() - 300000 
-      },
-      { 
-        title: "Selma (2014)", 
-        topics: ["Civil Rights & Black Power"], 
-        overview: "A chronicle of Dr. Martin Luther King, Jr.'s campaign to secure equal voting rights via an epic march from Selma to Montgomery, Alabama in 1965.",
-        tmdbRating: "7.5", 
-        posterUrl: "https://image.tmdb.org/t/p/w500/4c3g7yT6k1M43J23N9z0gI1W3k1.jpg",
-        votes: 18, 
-        timestamp: Date.now() - 200000 
-      },
-      { 
-        title: "The Untouchables (1987)", 
-        topics: ["Prohibition", "Gangsters, Al Capone, the Mafia"], 
-        overview: "Federal Agent Eliot Ness sets out to stop Prohibition-era mob leader Al Capone in 1930s Chicago.",
-        tmdbRating: "7.8", 
-        posterUrl: "https://image.tmdb.org/t/p/w500/487gS3sA8EwGzYt4E5R9A3A22x.jpg",
-        votes: 9, 
-        timestamp: Date.now() - 100000 
-      }
-    ];
+    // Holding films removed - list starts empty until students & staff vote
+    const initialSeedFilms = [];
 
     let films = [];
     let userVotedSet = new Set(JSON.parse(localStorage.getItem('user_voted_film_ids') || '[]'));
@@ -432,6 +413,70 @@
       return localStorage.getItem('custom_tmdb_api_key') || '15d2ea6d0dc1d476efbca3eba2192313'; // Standard public lookup key fallback
     }
 
+    function autoGenerateTags(tmdbMovie) {
+      if (!tmdbMovie) return ["General 1920-1973"];
+      
+      const text = `${tmdbMovie.rawTitle || ''} ${tmdbMovie.overview || ''}`.toLowerCase();
+      const year = parseInt(tmdbMovie.year || '0', 10);
+      const tags = new Set();
+
+      // Topic Keyword Mappings
+      if (text.includes('gatsby') || text.includes('roaring twenties') || text.includes('jazz age') || (year >= 1920 && year <= 1929)) {
+        tags.add("The Roaring Twenties");
+      }
+      if (text.includes('flapper') || text.includes('speakeasy')) {
+        tags.add("Flapper Culture");
+      }
+      if (text.includes('harlem') || text.includes('renaissance') || text.includes('jazz')) {
+        tags.add("The Harlem Renaissance");
+      }
+      if (text.includes('prohibition') || text.includes('bootleg') || text.includes('untouchables') || text.includes('alcohol ban')) {
+        tags.add("Prohibition");
+      }
+      if (text.includes('capone') || text.includes('mafia') || text.includes('mob') || text.includes('gangster') || text.includes('godfather') || text.includes('goodfellas')) {
+        tags.add("Gangsters, Al Capone, the Mafia");
+      }
+      if (text.includes('immigrant') || text.includes('immigration') || text.includes('ellis island')) {
+        tags.add("Immigration");
+      }
+      if (text.includes('strike') || text.includes('union') || text.includes('red scare') || text.includes('communist') || text.includes('mccarthy')) {
+        tags.add("Strikes, Unions & Red Scare");
+      }
+      if (text.includes('depression') || text.includes('dust bowl') || text.includes('wall street crash') || text.includes('new deal') || text.includes('fdr') || (year >= 1930 && year <= 1939)) {
+        tags.add("The Crash, Great Depression & New Deal");
+      }
+      if (text.includes('world war') || text.includes('wwii') || text.includes('ww2') || text.includes('pearl harbor') || text.includes('normandy') || (year >= 1939 && year <= 1945)) {
+        tags.add("WWII");
+      }
+      if (text.includes('suburb') || text.includes('1950s') || text.includes('rock n roll') || text.includes('teenager') || (year >= 1950 && year <= 1959)) {
+        tags.add("1950s Boom: Suburbia, Teens & Rock n Roll");
+      }
+      if (text.includes('civil rights') || text.includes('king') || text.includes('selma') || text.includes('black power') || text.includes('panther') || text.includes('malcolm')) {
+        tags.add("Civil Rights & Black Power");
+      }
+      if (text.includes('women') || text.includes('feminism') || text.includes('suffrage') || text.includes('equal rights')) {
+        tags.add("Women's Rights & Second Wave Feminism");
+      }
+      if (text.includes('hippie') || text.includes('woodstock') || text.includes('counterculture') || text.includes('counter-culture')) {
+        tags.add("Hippie Counter-Culture & Woodstock");
+      }
+      if (text.includes('vietnam') || text.includes('vietcong') || text.includes('saigon') || text.includes('platoon')) {
+        tags.add("The Vietnam War");
+      }
+
+      // Default decade-based fallback if no specific keywords matched
+      if (tags.size === 0) {
+        if (year >= 1920 && year < 1930) tags.add("The Roaring Twenties");
+        else if (year >= 1930 && year < 1940) tags.add("The Crash, Great Depression & New Deal");
+        else if (year >= 1940 && year < 1950) tags.add("WWII");
+        else if (year >= 1950 && year < 1960) tags.add("1950s Boom: Suburbia, Teens & Rock n Roll");
+        else if (year >= 1960 && year < 1975) tags.add("Civil Rights & Black Power");
+        else tags.add("General 1920-1973");
+      }
+
+      return Array.from(tags);
+    }
+
     // Search TMDB for closest matching movie
     async function searchTmdbMovie(query) {
       if (!query || query.trim().length < 2) return null;
@@ -447,7 +492,7 @@
           const releaseYear = best.release_date ? best.release_date.substring(0, 4) : '';
           const poster = best.poster_path ? `https://image.tmdb.org/t/p/w500${best.poster_path}` : null;
           
-          return {
+          const movieObj = {
             title: releaseYear ? `${best.title} (${releaseYear})` : best.title,
             rawTitle: best.title,
             year: releaseYear,
@@ -456,22 +501,15 @@
             posterUrl: poster,
             tmdbId: best.id
           };
+
+          movieObj.autoTags = autoGenerateTags(movieObj);
+          return movieObj;
         }
       } catch (err) {
-        console.warn("TMDB Search API error, falling back:", err);
+        console.warn("TMDB Search API error:", err);
       }
 
-      // Fallback matching if TMDB fails
-      const cleanTitle = query.trim().replace(/\b\w/g, l => l.toUpperCase());
-      return {
-        title: cleanTitle,
-        rawTitle: cleanTitle,
-        year: '',
-        overview: 'Historical feature film related to the 1920-1973 era.',
-        tmdbRating: '',
-        posterUrl: null,
-        tmdbId: null
-      };
+      return null;
     }
 
     window.debouncedTmdbPreview = () => {
@@ -479,9 +517,11 @@
       const titleInput = document.getElementById('movieTitle').value.trim();
       const spinner = document.getElementById('tmdbLoadingSpinner');
       const previewCard = document.getElementById('tmdbPreviewCard');
+      const warningBox = document.getElementById('tmdbNotFoundWarning');
 
       if (!titleInput) {
         previewCard.classList.add('hidden');
+        warningBox.classList.add('hidden');
         currentTmdbMatch = null;
         return;
       }
@@ -494,6 +534,12 @@
 
         if (match) {
           currentTmdbMatch = match;
+          warningBox.classList.add('hidden');
+          
+          // Check if already in our database list
+          const existing = films.find(f => f.tmdbId === match.tmdbId || f.title.toLowerCase() === match.title.toLowerCase());
+          document.getElementById('tmdbMatchStatus').innerText = existing ? `(Already Nominated - Will +1 Vote)` : `(New Nomination)`;
+
           document.getElementById('tmdbPreviewTitle').innerText = match.title;
           document.getElementById('tmdbPreviewYear').innerText = match.overview ? (match.overview.substring(0, 90) + '...') : '';
           document.getElementById('tmdbPreviewRating').innerText = match.tmdbRating ? `★ ${match.tmdbRating}` : '';
@@ -505,30 +551,102 @@
           } else {
             posterImg.src = `https://placehold.co/100x150/1e293b/amber?text=${encodeURIComponent(match.rawTitle.substring(0, 6))}`;
           }
+
+          const autoTagsContainer = document.getElementById('autoTagsPreview');
+          if (autoTagsContainer && match.autoTags) {
+            autoTagsContainer.innerHTML = `<span class="text-slate-400 font-semibold mr-1">Auto-Tags:</span>` + match.autoTags.map(t => `<span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">${t}</span>`).join(' ');
+          }
+
           previewCard.classList.remove('hidden');
         } else {
           previewCard.classList.add('hidden');
+          warningBox.classList.remove('hidden');
           currentTmdbMatch = null;
         }
-      }, 400);
+      }, 350);
     };
 
-    // Render tag selectors in form
-    function renderFormTagSelectors() {
-      const topicContainer = document.getElementById('tagSelectorContainer');
-      if (topicContainer) {
-        topicContainer.innerHTML = ALL_TOPICS.map((topic) => `
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-900 p-1.5 rounded transition text-slate-300">
-            <input type="checkbox" name="submissionTags" value="${escapeHtml(topic)}" class="accent-amber-500 rounded w-4 h-4">
-            <span class="truncate">${escapeHtml(topic)}</span>
-          </label>
-        `).join('');
+    window.handleFormSubmit = async (e) => {
+      e.preventDefault();
+      const titleInput = document.getElementById('movieTitle');
+      const rawEnteredTitle = titleInput.value.trim();
+
+      if (!rawEnteredTitle) return;
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Matching TMDB...</span>`;
+
+      // Get TMDB match or lookup on the fly
+      let matchedData = currentTmdbMatch;
+      if (!matchedData) {
+        matchedData = await searchTmdbMovie(rawEnteredTitle);
       }
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-film"></i> <span>Submit Film or Add Vote</span>`;
+
+      if (!matchedData) {
+        document.getElementById('tmdbNotFoundWarning').classList.remove('hidden');
+        return;
+      }
+
+      // Check if this TMDB film already exists in our database list
+      const existingFilm = films.find(f => (matchedData.tmdbId && f.tmdbId === matchedData.tmdbId) || f.title.toLowerCase() === matchedData.title.toLowerCase());
+
+      if (existingFilm) {
+        // Increment vote for existing film
+        await handleVote(existingFilm.id);
+        resetForm();
+        showToast(`Added a vote for "${existingFilm.title}"!`);
+        return;
+      }
+
+      // Add as new film nomination
+      const newFilm = {
+        title: matchedData.title,
+        tmdbId: matchedData.tmdbId,
+        topics: matchedData.autoTags || ["General 1920-1973"],
+        overview: matchedData.overview || '',
+        tmdbRating: matchedData.tmdbRating || '',
+        posterUrl: matchedData.posterUrl || null,
+        votes: 1,
+        timestamp: Date.now()
+      };
+
+      if (isFirebaseReady && db) {
+        try {
+          const filmsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'films');
+          const docRef = await addDoc(filmsCollection, newFilm);
+          userVotedSet.add(docRef.id);
+          localStorage.setItem('user_voted_film_ids', JSON.stringify(Array.from(userVotedSet)));
+          resetForm();
+          showToast(`Nominated: ${matchedData.title}`);
+          return;
+        } catch (err) {
+          console.warn("Firebase add film error:", err);
+        }
+      }
+
+      const localObj = { ...newFilm, id: 'local_' + Date.now() };
+      userVotedSet.add(localObj.id);
+      localStorage.setItem('user_voted_film_ids', JSON.stringify(Array.from(userVotedSet)));
+      films.push(localObj);
+      saveLocalStorage();
+      renderFilms();
+
+      resetForm();
+      showToast(`Nominated: ${matchedData.title}`);
+    };
+
+    function resetForm() {
+      document.getElementById('movieTitle').value = '';
+      document.getElementById('tmdbPreviewCard').classList.add('hidden');
+      document.getElementById('tmdbNotFoundWarning').classList.add('hidden');
+      currentTmdbMatch = null;
     }
 
     async function initDatabase() {
-      renderFormTagSelectors();
-
       // Pre-fill setup modal inputs
       const customTmdbKey = localStorage.getItem('custom_tmdb_api_key');
       if (customTmdbKey) document.getElementById('customTmdbApiKey').value = customTmdbKey;
@@ -552,12 +670,8 @@
           const filmsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'films');
           
           onSnapshot(filmsCollection, (snapshot) => {
-            if (snapshot.empty) {
-              initialSeedFilms.forEach(f => addDoc(filmsCollection, f));
-            } else {
-              films = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              renderFilms();
-            }
+            films = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderFilms();
           }, (err) => {
             console.warn("Firebase realtime fallback to local memory:", err);
             loadLocalStorageFallback();
@@ -578,7 +692,7 @@
       if (stored) {
         films = JSON.parse(stored);
       } else {
-        films = [...initialSeedFilms];
+        films = [];
         saveLocalStorage();
       }
       document.getElementById('syncBadge').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Local Storage Mode`;
@@ -619,73 +733,6 @@
         renderFilms();
       }
     };
-
-    window.handleFormSubmit = async (e) => {
-      e.preventDefault();
-      const titleInput = document.getElementById('movieTitle');
-      const rawEnteredTitle = titleInput.value.trim();
-
-      if (!rawEnteredTitle) return;
-
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Matching TMDB...</span>`;
-
-      // Get TMDB match or lookup on the fly
-      let matchedData = currentTmdbMatch;
-      if (!matchedData || matchedData.rawTitle.toLowerCase() !== rawEnteredTitle.toLowerCase()) {
-        matchedData = await searchTmdbMovie(rawEnteredTitle);
-      }
-
-      const selectedTopicBoxes = document.querySelectorAll('input[name="submissionTags"]:checked');
-      const topics = Array.from(selectedTopicBoxes).map(cb => cb.value);
-
-      const finalTitle = matchedData && matchedData.title ? matchedData.title : rawEnteredTitle;
-
-      const newFilm = {
-        title: finalTitle,
-        topics: topics.length > 0 ? topics : [],
-        overview: matchedData && matchedData.overview ? matchedData.overview : '',
-        tmdbRating: matchedData && matchedData.tmdbRating ? matchedData.tmdbRating : '',
-        posterUrl: matchedData && matchedData.posterUrl ? matchedData.posterUrl : null,
-        votes: 1,
-        timestamp: Date.now()
-      };
-
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `<i class="fa-solid fa-film"></i> <span>Match & Nominate Film</span>`;
-
-      if (isFirebaseReady && db) {
-        try {
-          const filmsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'films');
-          const docRef = await addDoc(filmsCollection, newFilm);
-          userVotedSet.add(docRef.id);
-          localStorage.setItem('user_voted_film_ids', JSON.stringify(Array.from(userVotedSet)));
-          resetForm();
-          showToast(`Nominated: ${finalTitle}`);
-          return;
-        } catch (err) {
-          console.warn("Firebase add film error:", err);
-        }
-      }
-
-      const localObj = { ...newFilm, id: 'local_' + Date.now() };
-      userVotedSet.add(localObj.id);
-      localStorage.setItem('user_voted_film_ids', JSON.stringify(Array.from(userVotedSet)));
-      films.push(localObj);
-      saveLocalStorage();
-      renderFilms();
-
-      resetForm();
-      showToast(`Nominated: ${finalTitle}`);
-    };
-
-    function resetForm() {
-      document.getElementById('movieTitle').value = '';
-      document.querySelectorAll('input[name="submissionTags"]').forEach(cb => cb.checked = false);
-      document.getElementById('tmdbPreviewCard').classList.add('hidden');
-      currentTmdbMatch = null;
-    }
 
     function showToast(msg) {
       const totalCount = films.length;
@@ -736,8 +783,8 @@
         container.innerHTML = `
           <div class="p-8 text-center bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
             <i class="fa-solid fa-film text-3xl text-slate-600"></i>
-            <p class="text-sm font-semibold text-slate-400">No films match your search or selected tag.</p>
-            <p class="text-xs text-slate-500">Be the first to nominate a film for this topic!</p>
+            <p class="text-sm font-semibold text-slate-400">No films in the list yet.</p>
+            <p class="text-xs text-slate-500">Be the first to nominate a film by typing its title above!</p>
           </div>
         `;
         return;
@@ -840,7 +887,7 @@
     function renderPoster() {
       const posterContent = document.getElementById('posterContent');
       
-      const topMovies = [...films].sort((a, b) => b.votes - a.votes).slice(0, 30);
+      const topMovies = [...films].sort((a, b) => b.votes - a.votes);
       const grouped = {};
 
       topMovies.forEach(m => {
