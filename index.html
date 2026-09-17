@@ -337,7 +337,14 @@
           <p class="text-xs text-slate-400">
             Paste your Firebase web app config to synchronize votes in real-time across all student devices:
           </p>
-          <textarea id="customFirebaseConfig" rows="3" placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "..."}' 
+          <textarea id="customFirebaseConfig" rows="3" const firebaseConfig = {
+  apiKey: "AIzaSyD9ayWq75H7nEOZminM75V98bl8HLQfqmo",
+  authDomain: "american-film-watchlist.firebaseapp.com",
+  projectId: "american-film-watchlist",
+  storageBucket: "american-film-watchlist.firebasestorage.app",
+  messagingSenderId: "513388477247",
+  appId: "1:513388477247:web:6fdf58c9918d9aa9cc718a"
+};
             class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"></textarea>
         </div>
 
